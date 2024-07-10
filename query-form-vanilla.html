@@ -13,7 +13,7 @@
             background-color: #f4f4f4;
         }
         .container {
-            max-width: 600px;
+            max-width: 950px;
             margin: 0 auto;
             background-color: #fff;
             padding: 20px;
@@ -44,7 +44,7 @@
         button:hover {
             background-color: #4cae4c;
         }
-        #error, #message, #loading {
+        #error, #loading {
             margin-top: 20px;
             padding: 10px;
             border-radius: 4px;
@@ -53,11 +53,6 @@
         #error {
             background-color: #f2dede;
             color: #a94442;
-            display: none;
-        }
-        #message {
-            background-color: #dff0d8;
-            color: #3c763d;
             display: none;
         }
         #loading {
@@ -78,6 +73,19 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+        #iframeContainer {
+            display: none;
+            margin-top: 20px;
+        }
+        .iframeRow {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        #querySelect {
+            margin-top: 20px;
+            margin-bottom: 20px;
         }
     </style>
 </head>
@@ -102,8 +110,17 @@
             <button type="submit">Submit</button>
         </form>
         <div id="loading"><div class="spinner"></div>Processing request...</div>
-        <div id="message"></div>
         <div id="error"></div>
+        <select id="querySelect" style="display: none;"></select>
+        <div id="iframeContainer">
+            <div class="iframeRow">
+                <iframe id="iframe1" width="450" height="266" frameborder="0"></iframe>
+                <iframe id="iframe2" width="450" height="266" frameborder="0"></iframe>
+            </div>
+            <div class="iframeRow">
+                <iframe id="iframe3" width="450" height="400" frameborder="0"></iframe>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -114,8 +131,9 @@
             const dbPathSelect = document.getElementById('dbPath');
             const queriesInput = document.getElementById('queries');
             const errorDiv = document.getElementById('error');
-            const messageDiv = document.getElementById('message');
             const loadingDiv = document.getElementById('loading');
+            const iframeContainer = document.getElementById('iframeContainer');
+            const querySelect = document.getElementById('querySelect');
 
             // Set default queries
             const defaultQueries = 'q1.sql,q2.sql,q3.sql,s1.sql,s2.sql,s3.sql,i1.sql,i2.sql,i3.sql,m1.sql,m2.sql,g1.sql,g2.sql,g3.sql,g4.sql,t1.sql,t2.sql,l1.sql,l2.sql,l3.sql,x1.sql,x2.sql,x3.sql,x4.sql,f1.sql,f2.sql';
@@ -125,6 +143,7 @@
             fetchDbPaths();
 
             form.addEventListener('submit', handleSubmit);
+            querySelect.addEventListener('change', updateIframes);
 
             function fetchDbPaths() {
                 fetch('http://203.253.70.135:3000/adb/db-list')
@@ -154,33 +173,33 @@
                 const workId = workIdInput.value;
                 const taskId = taskIdInput.value;
                 const selectedDbPath = dbPathSelect.value;
-                const queries = queriesInput.value;
+                const queries = queriesInput.value.split(',').map(q => q.trim());
 
                 if (!selectedDbPath) {
                     showError('Please select a database path.');
                     return;
                 }
 
-                const queriesArray = queries.split(',').map(q => q.trim());
+                showLoading();
+                showIframes();
+                populateQuerySelect(queries);
+                updateIframes();
 
                 const url = new URL(`http://203.253.70.135:3000/works/${workId}/tasks/${taskId}`);
                 url.searchParams.append('dbPath', selectedDbPath);
-
-                showLoading();
 
                 fetch(url, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ queries: queriesArray }),
+                    body: JSON.stringify({ queries: queries }),
                 })
                 .then(response => {
                     if (!response.ok) {
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     hideLoading();
-                    showMessage('Request processed successfully!');
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -189,9 +208,40 @@
                 });
             }
 
+            function populateQuerySelect(queries) {
+                querySelect.innerHTML = '';
+                queries.forEach(query => {
+                    const option = document.createElement('option');
+                    option.value = query;
+                    option.textContent = query;
+                    querySelect.appendChild(option);
+                });
+                querySelect.style.display = 'block';
+            }
+
+            function updateIframes() {
+                const selectedDbPath = dbPathSelect.value;
+                const selectedQuery = querySelect.value;
+                const workValue = parseWorkValue(selectedDbPath);
+
+                const baseUrl = 'http://203.253.70.135:3001/d-solo/ef65d611-b39a-42fc-89f4-e1efbe9a63ab/dashboard';
+                const commonParams = `orgId=1&var-work=${workValue}&var-query=${selectedQuery}&from=${Date.now()}&to=${Date.now() + 900000}`;
+
+                document.getElementById('iframe1').src = `${baseUrl}?${commonParams}&panelId=1`;
+                document.getElementById('iframe2').src = `${baseUrl}?${commonParams}&panelId=7`;
+                document.getElementById('iframe3').src = `${baseUrl}?${commonParams}&panelId=8`;
+            }
+
+            function parseWorkValue(dbPath) {
+                const parts = dbPath.split('.');
+                if (parts.length >= 3 && parts[parts.length - 2] === 'frag') {
+                    return `${parts[parts.length - 3]}KB_frag`;
+                }
+                return '16KB_frag_reboot'; // Default value
+            }
+
             function showLoading() {
                 loadingDiv.style.display = 'block';
-                messageDiv.style.display = 'none';
                 errorDiv.style.display = 'none';
             }
 
@@ -199,15 +249,13 @@
                 loadingDiv.style.display = 'none';
             }
 
-            function showMessage(message) {
-                messageDiv.textContent = message;
-                messageDiv.style.display = 'block';
+            function showIframes() {
+                iframeContainer.style.display = 'block';
             }
 
             function showError(message) {
                 errorDiv.textContent = message;
                 errorDiv.style.display = 'block';
-                messageDiv.style.display = 'none';
             }
         });
     </script>
