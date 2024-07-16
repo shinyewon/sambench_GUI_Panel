@@ -30,17 +30,23 @@
         }
         select, input[type="text"], input[type="number"], button {
             width: 100%;
-            padding: 8px;
+            padding: 10px;  /* 패딩을 조금 늘립니다 */
             margin-bottom: 20px;
             border: 1px solid #ddd;
             border-radius: 4px;
+            box-sizing: border-box;  /* 박스 사이징을 추가합니다 */
+            height: 40px;  /* 모든 요소의 높이를 동일하게 설정합니다 */
+            font-size: 16px;  /* 폰트 크기를 지정합니다 */
         }
+        
         button {
             background-color: #5cb85c;
             color: white;
             border: none;
             cursor: pointer;
+            transition: background-color 0.3s;  /* 부드러운 색상 전환 효과를 추가합니다 */
         }
+        
         button:hover {
             background-color: #4cae4c;
         }
@@ -73,6 +79,9 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+        iframe {
+            border: 1px solid #ddd;
         }
         #iframeContainer {
             display: none;
@@ -113,12 +122,18 @@
         <div id="error"></div>
         <select id="querySelect" style="display: none;"></select>
         <div id="iframeContainer">
+            <h2>Query Info</h2>
             <div class="iframeRow">
                 <iframe id="iframe1" width="450" height="266" frameborder="0"></iframe>
                 <iframe id="iframe2" width="450" height="266" frameborder="0"></iframe>
             </div>
             <div class="iframeRow">
                 <iframe id="iframe3" width="450" height="400" frameborder="0"></iframe>
+            </div>
+            <h2>System Info</h2>
+            <div class="iframeRow">
+                <iframe id="iframe4" width="450" height="548" frameborder="0"></iframe>
+                <iframe id="iframe5" width="450" height="548" frameborder="0"></iframe>
             </div>
         </div>
     </div>
@@ -223,13 +238,15 @@
                 const selectedDbPath = dbPathSelect.value;
                 const selectedQuery = querySelect.value;
                 const workValue = parseWorkValue(selectedDbPath);
-
+            
                 const baseUrl = 'http://203.253.70.135:3001/d-solo/ef65d611-b39a-42fc-89f4-e1efbe9a63ab/dashboard';
-                const commonParams = `orgId=1&var-work=${workValue}&var-query=${selectedQuery}&from=${Date.now()}&to=${Date.now() + 900000}`;
-
+                const commonParams = `orgId=1&var-work=${workValue}&var-query=${selectedQuery}&from=${Date.now()}&to=${Date.now() + 900000}&theme=light`;
+            
                 document.getElementById('iframe1').src = `${baseUrl}?${commonParams}&panelId=1`;
                 document.getElementById('iframe2').src = `${baseUrl}?${commonParams}&panelId=7`;
                 document.getElementById('iframe3').src = `${baseUrl}?${commonParams}&panelId=8`;
+                document.getElementById('iframe4').src = `${baseUrl}?${commonParams}&panelId=4`;
+                document.getElementById('iframe5').src = `${baseUrl}?${commonParams}&panelId=6`;
             }
 
             function parseWorkValue(dbPath) {
