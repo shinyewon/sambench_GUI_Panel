@@ -178,18 +178,22 @@
         <div id="error"></div>
         <select id="querySelect" style="display: none;"></select>
         <div id="iframeContainer">
-            <h2>Query Info</h2>
-            <div class="iframeRow">
-                <iframe id="iframe1" width="450" height="266" frameborder="0"></iframe>
-                <iframe id="iframe2" width="450" height="266" frameborder="0"></iframe>
+            <div id="queryInfoSection">
+                <h2>Query Info</h2>
+                <div class="iframeRow">
+                    <iframe id="iframe1" width="450" height="266" frameborder="0"></iframe>
+                    <iframe id="iframe2" width="450" height="266" frameborder="0"></iframe>
+                </div>
+                <div class="iframeRow">
+                    <iframe id="iframe3" width="450" height="400" frameborder="0"></iframe>
+                </div>
             </div>
-            <div class="iframeRow">
-                <iframe id="iframe3" width="450" height="400" frameborder="0"></iframe>
-            </div>
-            <h2>System Info</h2>
-            <div class="iframeRow">
-                <iframe id="iframe4" width="450" height="548" frameborder="0"></iframe>
-                <iframe id="iframe5" width="450" height="548" frameborder="0"></iframe>
+            <div id="systemInfoSection">
+                <h2>System Info</h2>
+                <div class="iframeRow">
+                    <iframe id="iframe4" width="450" height="548" frameborder="0"></iframe>
+                    <iframe id="iframe5" width="450" height="548" frameborder="0"></iframe>
+                </div>
             </div>
         </div>
     </div>
@@ -208,6 +212,18 @@
             }
             document.getElementById(tabName).style.display = "block";
             elmnt.classList.add("active");
+        
+            // Query Info와 System Info 섹션 표시 제어
+            const queryInfoSection = document.getElementById('queryInfoSection');
+            const systemInfoSection = document.getElementById('systemInfoSection');
+        
+            if (tabName === 'QueryTab') {
+                queryInfoSection.style.display = 'block';
+                systemInfoSection.style.display = 'block';
+            } else if (tabName === 'AdjustDBTab') {
+                queryInfoSection.style.display = 'none';
+                systemInfoSection.style.display = 'block';
+            }
         }
 
         document.addEventListener('DOMContentLoaded', function() {
