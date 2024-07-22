@@ -96,28 +96,84 @@
             margin-top: 20px;
             margin-bottom: 20px;
         }
+
+        .tablink {
+            background-color: #f1f1f1;
+            color: black;
+            float: left;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            padding: 14px 16px;
+            font-size: 17px;
+            width: 50%;
+        }
+        
+        .tablink:hover {
+            background-color: #ddd;
+        }
+        
+        .tabcontent {
+            display: none;
+            padding: 20px;
+            border-top: none;
+        }
+        .tablink.active {
+            background-color: #ddd;
+        }
+        
+        #QueryTab {
+            display: block; /* 초기에 Query 탭 내용을 보이게 설정 */
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Query Form</h1>
-        <form id="queryForm">
-            <label for="workId">Work ID:</label>
-            <input type="text" id="workId" required>
+        <div id="tabs">
+            <button class="tablink active" data-tab="QueryTab" id="defaultOpen">Query</button>
+            <button class="tablink" data-tab="AdjustDBTab">Adjust DB</button>
+        </div>
+    
+        <div id="QueryTab" class="tabcontent">
+            <form id="queryForm">
+                <label for="workId">Work ID:</label>
+                <input type="text" id="workId" required>
 
-            <label for="taskId">Task ID:</label>
-            <input type="number" id="taskId" required>
+                <label for="taskId">Task ID:</label>
+                <input type="number" id="taskId" required>
 
-            <label for="dbPath">Select Database Path:</label>
-            <select id="dbPath" required>
-                <option value="">Loading...</option>
-            </select>
+                <label for="dbPath">Select Database Path:</label>
+                <select id="dbPath" required>
+                    <option value="">Loading...</option>
+                </select>
 
-            <label for="queries">Queries (comma-separated):</label>
-            <input type="text" id="queries" required>
+                <label for="queries">Queries (comma-separated):</label>
+                <input type="text" id="queries" required>
 
-            <button type="submit">Submit</button>
-        </form>
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+
+        <div id="AdjustDBTab" class="tabcontent">
+            <h2>Adjust Database Settings</h2>
+            <form id="adjustDBForm">
+                <label for="systemAvailability">System Availability (%):</label>
+                <input type="number" id="systemAvailability" min="0" max="100" required>
+    
+                <label for="fragmentationDistance">Fragmentation Distance:</label>
+                <input type="number" id="fragmentationDistance" required>
+    
+                <label for="dbPageSize">Database Page Size:</label>
+                <select id="dbPageSize" required>
+                    <option value="4KB">4KB</option>
+                    <option value="16KB">16KB</option>
+                </select>
+    
+                <button type="submit">Apply Changes</button>
+            </form>
+        </div>
+
         <div id="loading"><div class="spinner"></div>Processing request...</div>
         <div id="error"></div>
         <select id="querySelect" style="display: none;"></select>
@@ -139,6 +195,21 @@
     </div>
 
     <script>
+        // 전역 스코프에 openTab 함수 정의
+        function openTab(tabName, elmnt) {
+            var i, tabcontent, tablinks;
+            tabcontent = document.getElementsByClassName("tabcontent");
+            for (i = 0; i < tabcontent.length; i++) {
+                tabcontent[i].style.display = "none";
+            }
+            tablinks = document.getElementsByClassName("tablink");
+            for (i = 0; i < tablinks.length; i++) {
+                tablinks[i].classList.remove("active");
+            }
+            document.getElementById(tabName).style.display = "block";
+            elmnt.classList.add("active");
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('queryForm');
             const workIdInput = document.getElementById('workId');
@@ -273,6 +344,46 @@
             function showError(message) {
                 errorDiv.textContent = message;
                 errorDiv.style.display = 'block';
+            }
+
+            const adjustDBForm = document.getElementById('adjustDBForm');
+            adjustDBForm.addEventListener('submit', handleAdjustDB);
+
+            // 페이지 로드 시 Query 탭을 기본으로 열기
+            openTab('QueryTab', document.getElementById('defaultOpen'));
+
+            // 탭 버튼에 이벤트 리스너 추가
+            document.querySelectorAll('.tablink').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    openTab(this.getAttribute('data-tab'), this);
+                });
+            });
+
+            function handleAdjustDB(e) {
+                e.preventDefault();
+                const systemAvailability = document.getElementById('systemAvailability').value;
+                const fragmentationDistance = document.getElementById('fragmentationDistance').value;
+                const dbPageSize = document.getElementById('dbPageSize').value;
+
+                // API 호출 준비
+                const data = {
+                    systemAvailability: parseFloat(systemAvailability),
+                    fragmentationDistance: parseInt(fragmentationDistance),
+                    dbPageSize: dbPageSize
+                };
+
+                console.log("Adjust DB data:", data);
+                // TODO: API 호출 코드 추가
+                // fetch('API_ENDPOINT', {
+                //     method: 'POST',
+                //     headers: {
+                //         'Content-Type': 'application/json',
+                //     },
+                //     body: JSON.stringify(data)
+                // })
+                // .then(response => response.json())
+                // .then(data => console.log('Success:', data))
+                // .catch((error) => console.error('Error:', error));
             }
         });
     </script>
