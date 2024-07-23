@@ -139,20 +139,23 @@
             <form id="queryForm">
                 <label for="workId">Work ID:</label>
                 <input type="text" id="workId" required>
-
+        
                 <label for="taskId">Task ID:</label>
                 <input type="number" id="taskId" required>
-
+        
                 <label for="dbPath">Select Database Path:</label>
                 <select id="dbPath" required>
                     <option value="">Loading...</option>
                 </select>
-
+        
                 <label for="queries">Queries (comma-separated):</label>
                 <input type="text" id="queries" required>
-
+        
                 <button type="submit">Submit</button>
             </form>
+            <div id="loading"><div class="spinner"></div>Processing request...</div>
+            <div id="error"></div>
+            <select id="querySelect" style="display: none;"></select>
         </div>
 
         <div id="AdjustDBTab" class="tabcontent">
@@ -174,9 +177,6 @@
             </form>
         </div>
 
-        <div id="loading"><div class="spinner"></div>Processing request...</div>
-        <div id="error"></div>
-        <select id="querySelect" style="display: none;"></select>
         <div id="iframeContainer">
             <div id="queryInfoSection">
                 <h2>Query Info</h2>
@@ -199,7 +199,9 @@
     </div>
 
     <script>
-        // 전역 스코프에 openTab 함수 정의
+        // 전역 변수로 쿼리 선택 드롭다운의 가시성 상태를 저장
+        let isQuerySelectVisible = false;
+
         function openTab(tabName, elmnt) {
             var i, tabcontent, tablinks;
             tabcontent = document.getElementsByClassName("tabcontent");
@@ -212,18 +214,40 @@
             }
             document.getElementById(tabName).style.display = "block";
             elmnt.classList.add("active");
-        
-            // Query Info와 System Info 섹션 표시 제어
+
             const queryInfoSection = document.getElementById('queryInfoSection');
             const systemInfoSection = document.getElementById('systemInfoSection');
-        
+            const loadingDiv = document.getElementById('loading');
+            const errorDiv = document.getElementById('error');
+            const querySelect = document.getElementById('querySelect');
+
             if (tabName === 'QueryTab') {
                 queryInfoSection.style.display = 'block';
                 systemInfoSection.style.display = 'block';
+                loadingDiv.style.display = 'none';
+                errorDiv.style.display = 'none';
+                // 이전 상태에 따라 쿼리 선택 드롭다운 표시 여부 결정
+                querySelect.style.display = isQuerySelectVisible ? 'block' : 'none';
             } else if (tabName === 'AdjustDBTab') {
                 queryInfoSection.style.display = 'none';
                 systemInfoSection.style.display = 'block';
+                loadingDiv.style.display = 'none';
+                errorDiv.style.display = 'none';
+                querySelect.style.display = 'none';
             }
+        }
+
+        function populateQuerySelect(queries) {
+            const querySelect = document.getElementById('querySelect');
+            querySelect.innerHTML = '';
+            queries.forEach(query => {
+                const option = document.createElement('option');
+                option.value = query;
+                option.textContent = query;
+                querySelect.appendChild(option);
+            });
+            querySelect.style.display = 'block';
+            isQuerySelectVisible = true; // 상태 업데이트
         }
 
         document.addEventListener('DOMContentLoaded', function() {
@@ -270,26 +294,27 @@
                     });
             }
 
+            
             function handleSubmit(e) {
                 e.preventDefault();
                 const workId = workIdInput.value;
                 const taskId = taskIdInput.value;
                 const selectedDbPath = dbPathSelect.value;
                 const queries = queriesInput.value.split(',').map(q => q.trim());
-
+            
                 if (!selectedDbPath) {
                     showError('Please select a database path.');
                     return;
                 }
-
+            
                 showLoading();
                 showIframes();
                 populateQuerySelect(queries);
                 updateIframes();
-
+            
                 const url = new URL(`http://203.253.70.135:3000/works/${workId}/tasks/${taskId}`);
                 url.searchParams.append('dbPath', selectedDbPath);
-
+            
                 fetch(url, {
                     method: 'POST',
                     headers: {
@@ -302,23 +327,29 @@
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
                     hideLoading();
+                    querySelect.style.display = 'block'; // 명시적으로 쿼리 선택 드롭다운을 표시
                 })
                 .catch(error => {
                     console.error('Error:', error);
                     hideLoading();
                     showError(`Error: ${error.message}`);
+                    querySelect.style.display = 'block'; // 오류 발생 시에도 쿼리 선택 드롭다운을 표시
                 });
             }
 
-            function populateQuerySelect(queries) {
-                querySelect.innerHTML = '';
-                queries.forEach(query => {
-                    const option = document.createElement('option');
-                    option.value = query;
-                    option.textContent = query;
-                    querySelect.appendChild(option);
-                });
-                querySelect.style.display = 'block';
+            function showLoading() {
+                loadingDiv.style.display = 'block';
+                errorDiv.style.display = 'none';
+                // 로딩 중에는 쿼리 선택 드롭다운을 숨기지 않습니다.
+                // querySelect.style.display = 'none';
+            }
+            
+            function hideLoading() {
+                loadingDiv.style.display = 'none';
+                // 로딩이 끝난 후 쿼리 선택 드롭다운을 다시 표시합니다.
+                if (isQuerySelectVisible) {
+                    querySelect.style.display = 'block';
+                }
             }
 
             function updateIframes() {
@@ -342,15 +373,6 @@
                     return `${parts[parts.length - 3]}KB_frag`;
                 }
                 return '16KB_frag_reboot'; // Default value
-            }
-
-            function showLoading() {
-                loadingDiv.style.display = 'block';
-                errorDiv.style.display = 'none';
-            }
-
-            function hideLoading() {
-                loadingDiv.style.display = 'none';
             }
 
             function showIframes() {
